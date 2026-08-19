@@ -5,7 +5,6 @@ import {
 } from '@workspace/api-zod';
 import { Router, type IRouter, type Request, type Response } from 'express';
 
-import { ObjectPermission } from '../lib/objectAcl';
 import {
   ObjectNotFoundError,
   ObjectStorageService,
@@ -45,9 +44,10 @@ router.post(
     try {
       const { name, size, contentType } = parsed.data;
 
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const objectPath =
-        objectStorageService.normalizeObjectEntityPath(uploadURL);
+      const { uploadURL, objectPath } = await objectStorageService.createUpload(
+        size,
+        contentType,
+      );
 
       res.json(
         RequestUploadUrlResponse.parse({
@@ -59,6 +59,38 @@ router.post(
     } catch (error) {
       req.log.error({ err: error }, 'Error generating upload URL');
       res.status(500).json({ error: 'Failed to generate upload URL' });
+    }
+  },
+);
+
+router.put(
+  '/storage/uploads/direct/:objectId',
+  async (req: Request, res: Response) => {
+    if (!hasAuthenticatedSession(req)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const rawObjectId = req.params.objectId;
+    const objectId = Array.isArray(rawObjectId) ? rawObjectId[0] : rawObjectId;
+    const size = Number(req.query.size);
+    const contentType = String(req.query.contentType || 'application/octet-stream');
+    const token = String(req.query.token || '');
+    if (!Number.isSafeInteger(size) || size < 0 || !token) {
+      res.status(400).json({ error: 'Invalid upload request' });
+      return;
+    }
+    try {
+      await objectStorageService.saveLocalUpload(
+        objectId,
+        size,
+        contentType,
+        token,
+        req,
+      );
+      res.status(204).end();
+    } catch (error) {
+      req.log.error({ err: error }, 'Error saving local upload');
+      res.status(400).json({ error: 'Failed to save upload' });
     }
   },
 );
