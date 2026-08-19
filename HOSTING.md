@@ -49,6 +49,26 @@ website, admin panel, certificate verification, Pages editor, and media routes
 all run from one Node.js process and one public domain. If Hostinger asks for a
 port, use the `PORT` environment variable it provides.
 
+## Moving the existing database
+
+Before shutting down the Replit version, run this locally against its current
+database:
+
+```bash
+pnpm data:export
+```
+
+It creates `data/tqp-data-export.json`, which is intentionally ignored by Git.
+Copy that file to the Hostinger project, configure its new `DATABASE_URL`, run
+`pnpm db:push`, then run:
+
+```bash
+pnpm data:import
+```
+
+This transfers certificates and dynamic Pages. Copy any existing uploaded media
+files separately into `MEDIA_STORAGE_DIR` before switching the domain.
+
 ## Vercel
 
 The frontend can be deployed as a static Vite build. The current Express API is
