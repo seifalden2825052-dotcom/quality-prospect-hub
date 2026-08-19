@@ -3,6 +3,8 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import { existsSync } from "fs";
+import { join } from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -65,5 +67,24 @@ app.use(
 );
 
 app.use("/api", router);
+
+// On Hostinger (and any regular Node.js host), the API also serves the compiled
+// React site. This keeps the browser and API on one domain so admin cookies and
+// relative /api requests work without special proxy configuration.
+const staticDir =
+  process.env.STATIC_DIR ||
+  join(process.cwd(), "..", "top-quality-prospect", "dist", "public");
+const indexFile = join(staticDir, "index.html");
+
+if (existsSync(indexFile)) {
+  app.use(express.static(staticDir));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api/")) {
+      res.sendFile(indexFile);
+      return;
+    }
+    next();
+  });
+}
 
 export default app;
