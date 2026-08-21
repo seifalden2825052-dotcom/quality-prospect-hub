@@ -29,8 +29,8 @@ read and write the directory. Back up this folder along with the database.
 
 ## Deployment
 
-- Use Node.js `20.19+` and pnpm `10.26.1` on the Hostinger application.
-- Install and build: `pnpm install --frozen-lockfile && pnpm build`
+- Use Node.js `20.19+` and pnpm `11.22.0` on the Hostinger application.
+- Install and build: `CI=true corepack pnpm install --frozen-lockfile && CI=true corepack pnpm build`
 - Create/update the PostgreSQL tables: `pnpm db:push`
 - Start the full website and API: `pnpm start`
 - PostgreSQL must be reachable from the deployed API.
@@ -42,7 +42,7 @@ read and write the directory. Back up this folder along with the database.
 On a Hostinger VPS or Node.js plan, set the startup command to:
 
 ```bash
-pnpm start
+corepack pnpm start
 ```
 
 The API serves the compiled frontend automatically after `pnpm build`, so the
