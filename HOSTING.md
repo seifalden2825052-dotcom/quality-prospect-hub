@@ -30,7 +30,8 @@ read and write the directory. Back up this folder along with the database.
 ## Deployment
 
 - Use Node.js `20.19+` and pnpm `11.22.0` on the Hostinger application.
-- Install and build: `CI=true corepack pnpm install --frozen-lockfile && CI=true corepack pnpm build`
+- Install dependencies: `CI=true bash ./scripts/hostinger-install.sh`
+- Build: `CI=true corepack pnpm build`
 - Create/update the PostgreSQL tables: `pnpm db:push`
 - Start the full website and API: `pnpm start`
 - PostgreSQL must be reachable from the deployed API.
@@ -49,6 +50,10 @@ The API serves the compiled frontend automatically after `pnpm build`, so the
 website, admin panel, certificate verification, Pages editor, and media routes
 all run from one Node.js process and one public domain. If Hostinger asks for a
 port, use the `PORT` environment variable it provides.
+
+The dedicated install command is intentional. Some Hostinger build directories
+remove the executable bit from pnpm's esbuild binary; the script restores it
+before running esbuild's postinstall check.
 
 ## Moving the existing database
 
