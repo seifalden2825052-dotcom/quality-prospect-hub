@@ -10,4 +10,5 @@ if [ -d node_modules/.pnpm ]; then
   find node_modules/.pnpm -type f -path '*/esbuild/bin/esbuild' -exec chmod u+x {} +
 fi
 
-corepack pnpm rebuild esbuild
+# esbuild is relocated and verified by scripts/build-hostinger.sh during the
+# build, because Hostinger's release directory may be mounted noexec.
