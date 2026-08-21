@@ -8,8 +8,9 @@
   },
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "bash ./scripts/build-hostinger.sh",
-    "start": "corepack pnpm --filter @workspace/api-server run start",
+    "build": "node ./scripts/build-if-needed.mjs",
+    "build:full": "bash ./scripts/build-hostinger.sh",
+    "start": "node artifacts/api-server/dist/index.js",
     "hostinger:install": "bash ./scripts/hostinger-install.sh",
     "db:push": "corepack pnpm --filter @workspace/db run push",
     "data:export": "corepack pnpm --filter @workspace/scripts run export-data",
