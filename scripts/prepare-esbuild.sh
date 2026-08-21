@@ -14,8 +14,22 @@ if [ -z "$esbuild_binary" ]; then
   exit 1
 fi
 
-# Do not filter by file type: Hostinger may restore this path as a symlink.
+# Replace the inode instead of relying on chmod to mutate a restored symlink
+# or a content-store file. Hostinger's deployment filesystem can preserve the
+# non-executable mode across a direct chmod.
+esbuild_fixed="${esbuild_binary}.hostinger-fixed"
+cp "$esbuild_binary" "$esbuild_fixed"
+chmod 755 "$esbuild_fixed"
+if [ ! -x "$esbuild_fixed" ]; then
+  echo "Could not make the esbuild binary executable" >&2
+  exit 1
+fi
+mv -f "$esbuild_fixed" "$esbuild_binary"
 chmod 755 "$esbuild_binary"
+if [ ! -x "$esbuild_binary" ]; then
+  echo "The esbuild binary is still not executable after replacement" >&2
+  exit 1
+fi
 
 esbuild_install="$(find node_modules/.pnpm -type f -path '*/esbuild/install.js' -print -quit 2>/dev/null || true)"
 if [ -z "$esbuild_install" ]; then
