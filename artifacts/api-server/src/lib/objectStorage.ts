@@ -95,8 +95,13 @@ export class ObjectStorageService {
     }
   }
 
-  async searchPublicObject(_filePath: string): Promise<null> {
-    return null;
+  async searchPublicObject(filePath: string): Promise<LocalObject | null> {
+    try {
+      return await this.getObjectEntityFile(`/objects/${filePath}`);
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) return null;
+      throw error;
+    }
   }
 
   async getObjectEntityFile(objectPath: string): Promise<LocalObject> {
@@ -129,5 +134,25 @@ export class ObjectStorageService {
       Readable.toWeb(createReadStream(object.filePath)) as ReadableStream,
       { headers },
     );
+  }
+
+  /**
+   * Delete an uploaded object by its normalized path (e.g. /objects/uploads/<uuid>).
+   * Silently succeeds if the object does not exist.
+   */
+  async deleteObjectEntity(normalizedPath: string): Promise<void> {
+    if (!normalizedPath.startsWith('/objects/')) {
+      return;
+    }
+
+    try {
+      const object = await this.getObjectEntityFile(normalizedPath);
+      await fs.unlink(object.filePath).catch(() => undefined);
+      await fs.unlink(`${object.filePath}.json`).catch(() => undefined);
+    } catch (error) {
+      if (!(error instanceof ObjectNotFoundError)) {
+        console.warn(`[objectStorage] Failed to delete object at ${normalizedPath}`, error);
+      }
+    }
   }
 }
