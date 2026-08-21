@@ -29,6 +29,7 @@ read and write the directory. Back up this folder along with the database.
 
 ## Deployment
 
+- Use Node.js `20.19+` and pnpm `10.26.1` on the Hostinger application.
 - Install and build: `pnpm install --frozen-lockfile && pnpm build`
 - Create/update the PostgreSQL tables: `pnpm db:push`
 - Start the full website and API: `pnpm start`
