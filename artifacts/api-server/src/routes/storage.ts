@@ -21,9 +21,9 @@ function hasAuthenticatedSession(req: Request): boolean {
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
+ * Request a signed direct-upload URL for a local server upload.
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
- * Then uploads the file directly to the returned presigned URL.
+ * Then uploads the file directly to the returned URL.
  * Requires auth middleware so public callers cannot mint write-capable URLs.
  */
 router.post(
@@ -98,9 +98,7 @@ router.put(
 /**
  * GET /storage/public-objects/*
  *
- * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
- * These are unconditionally public — no authentication or ACL checks.
- * IMPORTANT: Always provide this endpoint when object storage is set up.
+ * Serve an uploaded asset without requiring an admin session.
  */
 router.get(
   '/storage/public-objects/*filePath',
@@ -137,9 +135,7 @@ router.get(
 /**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serve uploaded object entities from the local media directory.
  */
 router.get('/storage/objects/*path', async (req: Request, res: Response) => {
   try {
@@ -148,21 +144,6 @@ router.get('/storage/objects/*path', async (req: Request, res: Response) => {
     const objectPath = `/objects/${wildcardPath}`;
     const objectFile =
       await objectStorageService.getObjectEntityFile(objectPath);
-
-    // --- Protected route example (uncomment when using replit-auth) ---
-    // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
-    //   return;
-    // }
-    // const canAccess = await objectStorageService.canAccessObjectEntity({
-    //   userId: req.user.id,
-    //   objectFile,
-    //   requestedPermission: ObjectPermission.READ,
-    // });
-    // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
-    //   return;
-    // }
 
     const response = await objectStorageService.downloadObject(objectFile);
 
