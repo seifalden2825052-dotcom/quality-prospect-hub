@@ -1,82 +1,75 @@
 # Hosting and environment variables
 
-The application has no runtime dependency on Replit. It can run on a standard
-Node.js host with PostgreSQL, such as a Hostinger VPS or Node.js hosting plan.
+The application has no runtime dependency on Replit. It runs on any standard
+Node.js host with PostgreSQL — Hostinger, a VPS, or Vercel (serverless).
+
+## How deployment works (important)
+
+**Hosts never build this project.** Hostinger's build environment mounts every
+writable directory (`repository`, `$HOME`, `/tmp`) as `noexec`, so esbuild —
+which Vite requires — can never run there. Instead:
+
+1. The compiled output is **committed to the repository**:
+   - `artifacts/api-server/dist/` — the Node.js server bundle (self-contained,
+     no `node_modules` needed at runtime)
+   - `artifacts/api-server/dist-serverless/` — the Vercel serverless bundle
+   - `artifacts/top-quality-prospect/dist/public/` — the compiled website
+2. `npm run build` runs `scripts/build-if-needed.mjs`, which **skips building**
+   when the committed output exists (Hostinger case) and only builds on machines
+   that can (Replit, your PC, CI).
+3. A GitHub Action (`.github/workflows/build-dist.yml`) rebuilds and commits the
+   `dist` folders automatically on every source push to `main`, so the deployable
+   output is always up to date without any manual build step.
+
+## Hostinger (recommended primary host)
+
+1. Connect the GitHub repo, branch `main`, Node.js **20.19+**.
+2. Build command: `npm run build` (it will print "Using the committed prebuilt
+   output" and finish instantly — this is expected).
+3. Start command: `npm start` (runs `node artifacts/api-server/dist/index.js`).
+4. Set the environment variables below, then redeploy.
+
+The API serves the compiled website from the same Node.js process, so the
+public site, admin panel, certificate verification, QR codes, Pages editor, and
+media all live on one domain.
+
+## Vercel
+
+The repo includes `vercel.json` and `api/index.js`; Vercel deploys the whole
+app as one serverless function using the committed prebuilt bundles.
+
+- Framework preset: **Other**. No build/override settings needed.
+- Set `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `SESSION_SECRET`,
+  `NODE_ENV=production` in the Vercel project settings.
+- **Media caveat:** Vercel's filesystem is ephemeral, so admin uploads stored
+  on local disk disappear between invocations. For production media on Vercel,
+  point the storage layer at external object storage, or keep media-heavy usage
+  on Hostinger.
 
 ## Required environment variables
 
-Copy `.env.example` to your hosting provider's environment-variable panel and
-replace the placeholder values:
-
 - `DATABASE_URL`: any reachable PostgreSQL database
 - `ADMIN_USERNAME` and `ADMIN_PASSWORD`: the admin login
-- `SESSION_SECRET`: a long random value
+- `SESSION_SECRET`: a long random value (32+ characters)
 - `NODE_ENV=production`
-- `PORT`: supplied by the host when applicable
-
-## Media storage
-
-Images and videos uploaded through the admin panel are stored on the Node.js
-server's local disk. Set `MEDIA_STORAGE_DIR` to a writable, persistent
-directory outside your deployment/release directory, for example:
-
-```text
-/home/USERNAME/tqp-media
-```
-
-Do not use a temporary directory, and make sure the Node.js process user can
-read and write the directory. Back up this folder along with the database.
-
-## Deployment
-
-- Use Node.js `20.19+` and pnpm `11.22.0` on the Hostinger application.
-- Install dependencies: `CI=true pnpm run hostinger:install`
-- Build: `CI=true corepack pnpm build`
-- Create/update the PostgreSQL tables: `pnpm db:push`
-- Start the full website and API: `pnpm start`
-- PostgreSQL must be reachable from the deployed API.
-- Configure all environment variables in the host dashboard, not in committed
-  files.
-
-## Hostinger
-
-On a Hostinger VPS or Node.js plan, set the startup command to:
-
-```bash
-corepack pnpm start
-```
-
-The API serves the compiled frontend automatically after `pnpm build`, so the
-website, admin panel, certificate verification, Pages editor, and media routes
-all run from one Node.js process and one public domain. If Hostinger asks for a
-port, use the `PORT` environment variable it provides.
-
-The dedicated install command is intentional. Some Hostinger build directories
-remove the executable bit from pnpm's esbuild binary; the script restores it
-before running esbuild's postinstall check.
+- `PORT`: supplied by the host when applicable (Hostinger sets it)
+- `MEDIA_STORAGE_DIR`: writable, persistent directory for uploads on Node
+  hosts, e.g. `/home/USERNAME/tqp-media` (back it up with the database)
 
 ## Moving the existing database
 
-Before shutting down the Replit version, run this locally against its current
-database:
+Before shutting down the Replit version, run against its current database:
 
 ```bash
-pnpm data:export
+corepack pnpm data:export
 ```
 
-It creates `data/tqp-data-export.json`, which is intentionally ignored by Git.
-Copy that file to the Hostinger project, configure its new `DATABASE_URL`, run
-`pnpm db:push`, then run:
+It creates `data/tqp-data-export.json` (ignored by Git). Copy that file to the
+new host, configure its `DATABASE_URL`, run `corepack pnpm db:push`, then:
 
 ```bash
-pnpm data:import
+corepack pnpm data:import
 ```
 
 This transfers certificates and dynamic Pages. Copy any existing uploaded media
 files separately into `MEDIA_STORAGE_DIR` before switching the domain.
-
-## Vercel
-
-The frontend can be deployed as a static Vite build. The current Express API is
-intended for a persistent Node.js host such as Hostinger Node.js/VPS. Vercel
-would require a serverless API adapter and external persistent media storage.
