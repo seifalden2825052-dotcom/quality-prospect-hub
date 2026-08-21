@@ -48,12 +48,6 @@ Thumbs.db
 .cache/
 .local/
 
-# pnpm local approval state
-.pnpm-approve-builds.json
-.pnpmrc
-**/.pnpm-approve-builds.json
-**/.pnpmrc
-
 # Persistent uploads stored by a non-Replit Node.js host
 data/
 artifacts/api-server/data/
