@@ -30,7 +30,7 @@ read and write the directory. Back up this folder along with the database.
 ## Deployment
 
 - Use Node.js `20.19+` and pnpm `11.22.0` on the Hostinger application.
-- Install dependencies: `CI=true bash ./scripts/hostinger-install.sh`
+- Install dependencies: `CI=true pnpm run hostinger:install`
 - Build: `CI=true corepack pnpm build`
 - Create/update the PostgreSQL tables: `pnpm db:push`
 - Start the full website and API: `pnpm start`
