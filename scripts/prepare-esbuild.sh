@@ -14,15 +14,26 @@ if [ -z "$source_binary" ]; then
   exit 1
 fi
 
-binary_dir="${HOME:-/tmp}/.cache/top-quality-prospect/bin"
-mkdir -p "$binary_dir"
-binary_path="$binary_dir/esbuild"
-cp "$source_binary" "$binary_path"
-chmod 755 "$binary_path"
+# Hostinger may mount the release directory and the user's cache directory
+# with noexec. Try /tmp first because it is normally an executable mount.
+candidate_dirs=(
+  "${TMPDIR:-/tmp}/top-quality-prospect-esbuild"
+  "${HOME:-/tmp}/.cache/top-quality-prospect/bin"
+)
 
-if [ ! -x "$binary_path" ] || ! "$binary_path" --version >/dev/null 2>&1; then
-  echo "Could not execute the relocated esbuild binary at $binary_path" >&2
-  exit 1
-fi
+for binary_dir in "${candidate_dirs[@]}"; do
+  mkdir -p "$binary_dir"
+  binary_path="$binary_dir/esbuild"
+  rm -f "$binary_path"
+  cp "$source_binary" "$binary_path"
+  chmod 755 "$binary_path"
 
-printf '%s\n' "$binary_path"
+  if [ -x "$binary_path" ] && "$binary_path" --version >/dev/null 2>&1; then
+    printf '%s\n' "$binary_path"
+    exit 0
+  fi
+done
+
+echo "Could not execute relocated esbuild from /tmp or HOME." >&2
+echo "Hostinger is mounting both locations with noexec; use a build environment with executable temporary storage." >&2
+exit 1
