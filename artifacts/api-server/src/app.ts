@@ -73,7 +73,13 @@ app.use("/api", router);
 // relative /api requests work without special proxy configuration.
 const staticDir =
   process.env.STATIC_DIR ||
-  join(process.cwd(), "..", "top-quality-prospect", "dist", "public");
+  [
+    // Hostinger commonly starts the root package from the repository root.
+    join(process.cwd(), "artifacts", "top-quality-prospect", "dist", "public"),
+    // Keep the package-local layout working for local and alternate hosts.
+    join(process.cwd(), "..", "top-quality-prospect", "dist", "public"),
+  ].find((candidate) => existsSync(join(candidate, "index.html"))) ||
+  join(process.cwd(), "artifacts", "top-quality-prospect", "dist", "public");
 const indexFile = join(staticDir, "index.html");
 
 if (existsSync(indexFile)) {
