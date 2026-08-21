@@ -70,7 +70,9 @@ autoInstallPeers: false
 
 allowBuilds:
   '@swc/core': true
-  esbuild: true
+  # Hostinger can restore esbuild without its executable bit. The build
+  # preparation script repairs it and runs install.js explicitly.
+  esbuild: false
   msw: true
   unrs-resolver: true
 
