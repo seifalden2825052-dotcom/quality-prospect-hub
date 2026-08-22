@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
-    "build": "ncc build src/index.ts -o dist -t -m",
+    "build": "ncc build src/index.ts -o dist -t -m && node ../../scripts/fix-ncc-worker.mjs",
+    "build:serverless": "ncc build src/serverless.ts -o dist-serverless -t -m && node ../../scripts/fix-ncc-worker.mjs",
     "start": "node --enable-source-maps ./dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
