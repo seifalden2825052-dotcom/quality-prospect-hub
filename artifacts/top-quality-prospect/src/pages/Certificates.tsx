@@ -657,7 +657,11 @@ function DeleteButton({ id }: { id: number }) {
   const handleDelete = () => {
     if (confirm("Are you sure you want to delete this certificate?")) {
       deleteMutation.mutate({ id }, {
-        onSuccess: () => {
+        onSuccess: (_deleted, variables) => {
+          queryClient.setQueryData<Certificate[]>(
+            getListCertificatesQueryKey(),
+            (current) => current?.filter((item) => item.id !== variables.id) ?? [],
+          );
           queryClient.invalidateQueries({ queryKey: getListCertificatesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetCertificateStatsQueryKey() });
         },
@@ -670,6 +674,7 @@ function DeleteButton({ id }: { id: number }) {
       onClick={handleDelete}
       disabled={deleteMutation.isPending}
       data-testid={`button-delete-${id}`}
+      title={deleteMutation.error instanceof Error ? deleteMutation.error.message : "Delete certificate"}
       className="p-2 text-muted-foreground hover:text-destructive bg-white/5 hover:bg-destructive/20 transition-colors border border-white/10 hover:border-destructive/50 disabled:opacity-50"
     >
       <Trash2 className="w-4 h-4" />

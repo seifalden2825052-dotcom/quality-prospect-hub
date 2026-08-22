@@ -29,13 +29,26 @@ export function PagesManager() {
   const queryClient = useQueryClient();
   const { data: pages, isLoading } = useListPages();
   const [editing, setEditing] = useState<SitePage | "new" | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const deleteMutation = useDeletePage();
 
   const handleDelete = (page: SitePage) => {
     if (confirm(`Delete page "${page.title}"? This cannot be undone.`)) {
+      setDeleteError(null);
       deleteMutation.mutate({ id: page.id }, {
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() }),
+        onSuccess: (_deleted, variables) => {
+          // Update the visible list immediately. Invalidate as well so the
+          // server remains the source of truth after the next fetch.
+          queryClient.setQueryData<SitePage[]>(
+            getListPagesQueryKey(),
+            (current) => current?.filter((item) => item.id !== variables.id) ?? [],
+          );
+          queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
+        },
+        onError: (error) => {
+          setDeleteError(error instanceof Error ? error.message : "Failed to delete the page.");
+        },
       });
     }
   };
@@ -68,6 +81,11 @@ export function PagesManager() {
           <Plus className="w-4 h-4" /> NEW PAGE
         </button>
       </div>
+      {deleteError && (
+        <div className="mx-6 mt-6 text-destructive text-sm bg-destructive/10 p-3 border border-destructive/20" role="alert">
+          {deleteError}
+        </div>
+      )}
 
       {(!pages || pages.length === 0) ? (
         <div className="p-12 text-center text-muted-foreground">
