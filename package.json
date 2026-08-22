@@ -7,7 +7,7 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "preinstall": "sh -c 'rm -f yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) rm -f package-lock.json ;; *) if [ -n \"$REPL_ID\" ]; then echo \"Use pnpm instead\" >&2; exit 1; fi ;; esac'",
     "build": "node ./scripts/build-if-needed.mjs",
     "build:full": "bash ./scripts/build-hostinger.sh",
     "start": "node artifacts/api-server/dist/index.js",
