@@ -68,6 +68,21 @@ app.use(
 
 app.use("/api", router);
 
+// Keep operational failures JSON-shaped for the web client.  In particular,
+// a database connection issue must not become Express's generic HTML 500 page,
+// which hides the actionable configuration problem from an admin.
+app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  logger.error({ err, requestId: req.id }, "Unhandled API request error");
+  res.status(500).json({
+    error: "The database is temporarily unavailable. Please verify the DATABASE_URL setting and try again.",
+  });
+});
+
 // On Hostinger (and any regular Node.js host), the API also serves the compiled
 // React site. This keeps the browser and API on one domain so admin cookies and
 // relative /api requests work without special proxy configuration.
